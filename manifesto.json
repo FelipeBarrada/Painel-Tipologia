@@ -1,0 +1,66 @@
+{
+  "gerado_em": "2026-09-21T13:03:00-03:00",
+  "versao": "v13",
+  "arquivo_principal": "index.html",
+  "matriz": "build_matriz_v13_novo/matriz_longa",
+  "bases": [
+    "variaveis_gerais",
+    "rais2020",
+    "renda_responsavel_2022",
+    "saneamento_2023",
+    "seguranca_alimentar_2024",
+    "siconfi_corrigida",
+    "munic_corrigida"
+  ],
+  "modelo": {
+    "componentes_finais": 48,
+    "ice": 41,
+    "ieg": 7,
+    "municipios_com_arquivo_de_modelo": 5571,
+    "catalogo": "data/modelo_catalogo.js",
+    "arquivos_municipais": "data/modelo_municipios/"
+  },
+  "camada_completa": {
+    "arquivos_municipais": 5571,
+    "diretorio": "data/municipios/",
+    "registros_emitidos": 52724851,
+    "registros_descartados": 3643811,
+    "situacao_rotulos": "curadoria incremental; variaveis sem rotulo legivel permanecem sinalizadas"
+  },
+  "pib_per_capita_2023": {
+    "metodo_faixas": "quintis_nacionais",
+    "pontos_de_corte": [
+      15616.44,
+      24380.539999999997,
+      37761.84,
+      56748.119999999995
+    ],
+    "municipios_classificados": 5125,
+    "municipios_com_pib_pc": 5125,
+    "contagem_por_quintil_pib": {
+      "1": 1025,
+      "2": 1025,
+      "3": 1025,
+      "4": 1025,
+      "5": 1025
+    },
+    "fonte_pib_pc": "matriz_longa/base=variaveis_gerais"
+  },
+  "malha": {
+    "linhas": 5570,
+    "crs_saida": "EPSG:4326",
+    "tipos_geometria": {
+      "Polygon": 5468,
+      "MultiPolygon": 102
+    }
+  },
+  "saida": {
+    "resumo": "data/resumo.js",
+    "topologia": "data/topologia.js",
+    "catalogo_modelo": "data/modelo_catalogo.js",
+    "arquivos_municipais_completos": 5571,
+    "arquivos_municipais_modelo": 5571,
+    "tamanho_index_bytes": 49057
+  },
+  "nota": "Este build nao recalcula ICE, IEG, quadrantes ou perfis. O painel separa a camada completa da camada dos 48 componentes finais do modelo."
+}

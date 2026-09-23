@@ -1,0 +1,1689 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Capacidade estatal e entrega nos municípios brasileiros</title>
+    <style>
+      :root {
+        --navy: #071a35;
+        --blue: #0b63ce;
+        --blue2: #3985e7;
+        --bg: #eef3f8;
+        --surface: #fff;
+        --text: #15243a;
+        --muted: #66758a;
+        --line: #d9e3ee;
+        --shadow: 0 12px 32px rgba(12, 42, 82, 0.12);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          14px Inter,
+          "Segoe UI",
+          Arial,
+          sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+      header {
+        height: 76px;
+        padding: 15px 22px;
+        background: linear-gradient(110deg, var(--navy), #103e78);
+        color: #fff;
+        box-shadow: 0 3px 16px rgba(5, 24, 50, 0.25);
+      }
+      header h1 {
+        margin: 0 0 5px;
+        font-size: 21px;
+      }
+      header div {
+        color: #c9dcf4;
+        font-size: 13px;
+      }
+      .app {
+        display: grid;
+        grid-template-columns: minmax(430px, 1fr) 500px;
+        height: calc(100vh - 76px);
+      }
+      .mapbox {
+        position: relative;
+        overflow: hidden;
+      }
+      .tools {
+        position: absolute;
+        z-index: 5;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: 14px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+      }
+      .searchbox {
+        position: relative;
+      }
+      .tools input,
+      .tools select {
+        height: 40px;
+        padding: 0 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #f9fbfd;
+        color: var(--text);
+        outline: none;
+      }
+      .tools input {
+        width: 230px;
+      }
+      .tools input:focus,
+      .tools select:focus {
+        border-color: var(--blue2);
+        box-shadow: 0 0 0 3px rgba(57, 133, 231, 0.15);
+      }
+      .suggestions {
+        position: absolute;
+        top: 44px;
+        left: 0;
+        width: 330px;
+        max-height: 310px;
+        overflow: auto;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        display: none;
+      }
+      .suggestion {
+        display: block;
+        width: 100%;
+        padding: 10px 12px;
+        border: 0;
+        border-bottom: 1px solid #edf1f6;
+        background: #fff;
+        text-align: left;
+        cursor: pointer;
+      }
+      .suggestion:hover,
+      .suggestion.active {
+        background: #eaf3ff;
+      }
+      .suggestion strong {
+        display: block;
+        color: #183b68;
+      }
+      .suggestion small {
+        color: var(--muted);
+      }
+      .legend {
+        position: absolute;
+        z-index: 3;
+        left: 14px;
+        bottom: 14px;
+        width: 255px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 12px;
+        box-shadow: var(--shadow);
+      }
+      .legend-title {
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 6px 0;
+        font-size: 12px;
+      }
+      .swatch {
+        width: 15px;
+        height: 15px;
+        border-radius: 4px;
+        flex: 0 0 15px;
+      }
+      .selected-note {
+        border-top: 1px solid var(--line);
+        padding-top: 7px;
+        margin-top: 7px;
+      }
+      .selected-swatch {
+        background: #00e5ff;
+        border: 2px solid #071a35;
+      }
+      canvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+        background: linear-gradient(160deg, #dcecf7, #edf5fa);
+      }
+      .side {
+        background: #f7f9fc;
+        border-left: 1px solid var(--line);
+        padding: 20px;
+        overflow: auto;
+        box-shadow: -5px 0 22px rgba(13, 45, 86, 0.07);
+      }
+      .side h2 {
+        font-size: 25px;
+        margin: 0 0 9px;
+      }
+      .cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 15px 0;
+      }
+      .card {
+        min-height: 126px;
+        border: 1px solid var(--line);
+        padding: 14px;
+        border-radius: 13px;
+        background: #fff;
+        box-shadow: 0 3px 12px rgba(17, 54, 94, 0.06);
+      }
+      .card b {
+        display: block;
+        color: var(--blue);
+        font-size: 24px;
+        margin: 6px 0;
+      }
+      .meta {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .search {
+        width: 100%;
+        height: 42px;
+        padding: 0 13px;
+        margin: 10px 0;
+        border: 1px solid var(--line);
+        border-radius: 10px;
+      }
+      .family,
+      .theme {
+        border: 1px solid var(--line);
+        border-radius: 11px;
+        margin: 9px 0;
+        overflow: hidden;
+        background: #fff;
+      }
+      .family > summary,
+      .theme > summary {
+        cursor: pointer;
+        list-style: none;
+        padding: 13px 14px;
+        font-weight: 700;
+        background: #eaf3ff;
+        color: #183b68;
+      }
+      .theme > summary {
+        background: #f6f9fc;
+        color: #334b68;
+      }
+      .badge {
+        float: right;
+        background: #d9e9ff;
+        color: #164d92;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+      }
+      .var {
+        padding: 12px 14px;
+        border-top: 1px solid #edf1f6;
+      }
+      .var strong {
+        display: block;
+      }
+      .value {
+        font-size: 17px;
+        font-weight: 650;
+        color: #163e73;
+        margin: 5px 0;
+      }
+      .tech {
+        font-size: 12px;
+        color: var(--muted);
+      }
+      .warn {
+        color: #98620b;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .model-strip {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin: 12px 0;
+      }
+      .model-card {
+        padding: 13px 14px;
+        border-radius: 12px;
+        color: #fff;
+        background: linear-gradient(135deg, #123b70, #0b63ce);
+      }
+      .model-card span {
+        display: block;
+        font-size: 12px;
+        color: #d9e8fb;
+      }
+      .model-card b {
+        display: block;
+        font-size: 25px;
+        margin: 3px 0;
+      }
+      .model-card small {
+        color: #d9e8fb;
+      }
+      .context-line {
+        margin: 3px 0 13px;
+        padding: 9px 11px;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+      }
+      .empty-state {
+        margin-top: 50px;
+        padding: 28px;
+        text-align: center;
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        box-shadow: var(--shadow);
+        color: var(--muted);
+      }
+      @media (max-width: 850px) {
+        header {
+          height: auto;
+        }
+        .app {
+          grid-template-columns: 1fr;
+          height: auto;
+        }
+        .mapbox {
+          height: 60vh;
+        }
+        .side {
+          min-height: 40vh;
+        }
+        .legend {
+          width: 220px;
+        }
+        .tools {
+          right: 0;
+        }
+        .cards {
+          grid-template-columns: 1fr;
+        }
+      }
+      .study-modal {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(3, 14, 31, 0.72);
+        backdrop-filter: blur(7px);
+      }
+      .study-modal[hidden] {
+        display: none;
+      }
+      .study-dialog {
+        width: min(680px, 100%);
+        max-height: 92vh;
+        overflow: auto;
+        background: #fff;
+        border-radius: 20px;
+        box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
+      }
+      .study-head {
+        padding: 24px 26px 18px;
+        color: #fff;
+        background: linear-gradient(120deg, #071a35, #0b63ce);
+        border-radius: 19px 19px 0 0;
+      }
+      .study-kicker {
+        display: inline-block;
+        margin-bottom: 10px;
+        padding: 5px 9px;
+        border: 1px solid rgba(255, 255, 255, 0.28);
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .study-head h2 {
+        margin: 0 0 7px;
+        font-size: 24px;
+      }
+      .study-head p {
+        margin: 0;
+        color: #d9e8fb;
+        line-height: 1.5;
+      }
+      .study-body {
+        padding: 22px 26px 26px;
+      }
+      .study-body p,
+      .study-points li {
+        line-height: 1.5;
+      }
+      .study-points {
+        margin: 15px 0;
+        padding-left: 21px;
+      }
+      .study-points li {
+        margin: 9px 0;
+      }
+      .study-warning {
+        margin: 17px 0;
+        padding: 13px 14px;
+        border-left: 4px solid #e97800;
+        border-radius: 8px;
+        background: #fff7e8;
+        color: #543b12;
+        line-height: 1.5;
+      }
+      .study-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        margin-top: 19px;
+      }
+      .study-actions label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #66758a;
+        font-size: 12px;
+      }
+      .study-button {
+        min-width: 190px;
+        height: 44px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 10px;
+        background: #0b63ce;
+        color: #fff;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .study-button:hover {
+        background: #084eaa;
+      }
+      @media (max-width: 620px) {
+        .study-head,
+        .study-body {
+          padding-left: 19px;
+          padding-right: 19px;
+        }
+        .study-actions {
+          align-items: stretch;
+          flex-direction: column-reverse;
+        }
+        .study-button {
+          width: 100%;
+        }
+      }
+      .model-card { border: 0; text-align: left; cursor: pointer; width: 100%; font: inherit; }
+      .model-card:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(11,99,206,.25); }
+      .model-card:focus-visible { outline: 3px solid #8fc5ff; outline-offset: 2px; }
+      .expand-hint { margin-top: 6px; font-size: 11px; color: #fff; opacity: .9; }
+      .index-detail { margin: -3px 0 15px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+      .index-detail[hidden] { display: none; }
+      .index-detail h3 { margin: 0 0 5px; color: #183b68; }
+      .index-note { margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.45; }
+      .model-variable { padding: 11px 0; border-top: 1px solid #edf1f6; }
+      .model-variable-head { display: flex; justify-content: space-between; gap: 12px; }
+      .model-variable-value { color: #0b63ce; font-weight: 750; text-align: right; }
+      .model-variable small { display: block; margin-top: 4px; color: var(--muted); line-height: 1.4; }
+      .pib-context { margin: 0 0 12px; padding: 10px 12px; border-radius: 9px; background: #eef6ff; color: #183b68; }
+      .model-loading { padding: 14px; color: var(--muted); text-align: center; }
+      .model-group { margin: 10px 0; border-left: 3px solid #d9e9ff; padding-left: 10px; }
+      .model-group-title { margin: 4px 0 2px; color: #334b68; font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; }
+      .model-variable-note { margin-top: 5px; padding: 7px 9px; border-radius: 8px; background: #fff8e8; color: #795000; font-size: 11px; line-height: 1.4; }
+      .model-variable-tech { margin-top: 5px; color: var(--muted); font-size: 11px; }
+
+
+      /* Identidade visual inspirada no Padrão Digital de Governo */
+      :root {
+        --navy: #071d41;
+        --blue: #1351b4;
+        --blue2: #2670e8;
+        --gov-blue: #183eff;
+        --gov-green: #00a91c;
+        --gov-yellow: #ffcd07;
+        --gov-red: #e52207;
+        --bg: #f8f8f8;
+        --surface: #ffffff;
+        --text: #1f1f1f;
+        --muted: #555555;
+        --line: #d9d9d9;
+        --shadow: 0 8px 24px rgba(7,29,65,.12);
+      }
+      body { font-family: Verdana, Arial, sans-serif; background: var(--bg); }
+      header.gov-header {
+        height: 104px;
+        padding: 0;
+        background: #fff;
+        color: var(--text);
+        box-shadow: 0 2px 10px rgba(7,29,65,.14);
+        position: relative;
+        z-index: 20;
+      }
+      .gov-colorbar { height: 5px; display: grid; grid-template-columns: repeat(4,1fr); }
+      .gov-colorbar span:nth-child(1){background:#183eff}.gov-colorbar span:nth-child(2){background:#ffcd07}.gov-colorbar span:nth-child(3){background:#00a91c}.gov-colorbar span:nth-child(4){background:#e52207}
+      .gov-header-inner { height: 99px; display:flex; align-items:center; justify-content:space-between; gap:24px; padding:14px 22px; }
+      .gov-brand { min-width: 0; }
+      .gov-eyebrow { color:#555; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin-bottom:5px; }
+      header.gov-header h1 { color:#071d41; margin:0 0 5px; font-size:22px; line-height:1.2; }
+      .gov-subtitle { color:#555; font-size:12px; }
+      .gov-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+      .gov-button { min-height:40px; padding:0 15px; border-radius:20px; border:2px solid #1351b4; background:#fff; color:#1351b4; font:700 12px Verdana,Arial,sans-serif; cursor:pointer; }
+      .gov-button:hover,.gov-button:focus-visible { background:#e8f1ff; outline:none; }
+      .gov-button.primary { background:#1351b4; color:#fff; }
+      .gov-button.primary:hover,.gov-button.primary:focus-visible { background:#0c326f; }
+      .app { height:calc(100vh - 104px); grid-template-columns:minmax(430px,1fr) minmax(430px,500px); }
+      .mapbox { background:#e7f2f8; }
+      canvas { background:linear-gradient(160deg,#e0eff7,#f4f8fa); }
+      .tools { border:1px solid #d9d9d9; border-radius:12px; box-shadow:var(--shadow); backdrop-filter:none; }
+      .tools input,.tools select,.search { border-radius:6px; background:#fff; }
+      .tools input:focus,.tools select:focus,.search:focus { border-color:#1351b4; box-shadow:0 0 0 3px rgba(19,81,180,.18); outline:none; }
+      .side { background:#f8f8f8; border-left:1px solid #d9d9d9; }
+      .side h2 { color:#071d41; }
+      .side-section-title { display:flex; align-items:center; gap:9px; margin:20px 0 10px; color:#071d41; font-size:18px; }
+      .side-section-title::before { content:""; width:5px; height:22px; border-radius:3px; background:#ffcd07; flex:0 0 5px; }
+      .model-card { background:#1351b4; border-radius:8px; box-shadow:none; }
+      .model-card:nth-child(2) { background:#0c326f; }
+      .model-card:hover { box-shadow:0 6px 16px rgba(7,29,65,.22); }
+      .card,.family,.theme,.index-detail,.context-line,.pib-context { border-radius:8px; box-shadow:none; }
+      .family > summary { background:#e8f1ff; color:#071d41; }
+      .theme > summary { background:#f0f0f0; color:#333; }
+      .badge { background:#d4e5ff; color:#0c326f; }
+      .value,.model-variable-value,.card b { color:#1351b4; }
+      .legend { border:1px solid #d9d9d9; border-radius:8px; }
+      .data-heading { margin-top:18px; padding-top:15px; border-top:1px solid #d9d9d9; }
+      .data-heading p { margin:4px 0 10px; color:var(--muted); font-size:12px; line-height:1.45; }
+      .method-modal { position:fixed; inset:0; z-index:10050; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(7,29,65,.72); }
+      .method-modal[hidden] { display:none; }
+      .method-dialog { width:min(860px,100%); max-height:90vh; overflow:auto; background:#fff; border-radius:12px; box-shadow:0 24px 70px rgba(0,0,0,.35); }
+      .method-head { position:sticky; top:0; z-index:1; display:flex; justify-content:space-between; align-items:flex-start; gap:20px; padding:20px 24px; background:#071d41; color:#fff; border-top:5px solid #ffcd07; }
+      .method-head h2 { margin:0 0 5px; font-size:23px; }
+      .method-head p { margin:0; color:#d9e8fb; line-height:1.45; }
+      .method-close { width:40px; height:40px; border:2px solid #fff; border-radius:50%; background:transparent; color:#fff; font-size:23px; cursor:pointer; }
+      .method-body { padding:22px 24px 28px; }
+      .method-intro { margin:0 0 18px; padding:14px 16px; background:#e8f1ff; border-left:5px solid #1351b4; line-height:1.55; }
+      .method-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+      .method-card { border:1px solid #d9d9d9; border-radius:8px; padding:16px; background:#fff; }
+      .method-card h3 { margin:0 0 8px; color:#071d41; }
+      .method-card p,.method-card li { line-height:1.5; }
+      .method-card ul { margin:8px 0 0; padding-left:20px; }
+      .method-wide { grid-column:1/-1; }
+      .method-scale { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:12px; }
+      .method-scale div { padding:11px; border-radius:7px; text-align:center; background:#f0f0f0; }
+      .method-scale b { display:block; color:#1351b4; font-size:18px; }
+      .method-warning { border-left:5px solid #ffcd07; background:#fff8d6; }
+      .study-head { background:#071d41; border-top:5px solid #ffcd07; }
+      .study-button { background:#1351b4; }
+      @media(max-width:850px){ header.gov-header{height:auto}.gov-header-inner{height:auto;align-items:flex-start;flex-direction:column}.gov-actions{justify-content:flex-start}.app{height:auto}.method-grid{grid-template-columns:1fr}.method-wide{grid-column:auto} }
+      @media(max-width:620px){ .method-scale{grid-template-columns:1fr}.gov-button{width:100%}.gov-actions{width:100%} }
+
+      /* ===== Experiência cartográfica e navegação v13.2 ===== */
+      :root {
+        --map-bg: #edf3f5;
+        --q1: #2f855a;
+        --q2: #d97706;
+        --q3: #2b6cb0;
+        --q4: #c2413b;
+        --selected: #00d7e5;
+        --panel-radius: 18px;
+      }
+      body { overflow: hidden; }
+      .app {
+        grid-template-columns: minmax(0, 72fr) minmax(360px, 28fr);
+        height: calc(100vh - 104px);
+        background: var(--map-bg);
+      }
+      .mapbox { min-width: 0; background: var(--map-bg); }
+      canvas { background: radial-gradient(circle at 46% 44%, #f9fcfd 0, #edf4f6 58%, #e4edf1 100%); }
+      .side {
+        min-width: 0;
+        padding: 20px 18px 28px;
+        background: rgba(255,255,255,.97);
+        border-left: 1px solid #d8e1e7;
+        box-shadow: -14px 0 35px rgba(7,29,65,.08);
+      }
+      .side h2 { font-size: clamp(21px, 1.65vw, 28px); letter-spacing: -.03em; }
+      .detail-close { display:none; }
+
+      /* Navegação flutuante do mapa */
+      .map-nav {
+        position: absolute;
+        z-index: 8;
+        top: 16px;
+        left: 18px;
+        right: 18px;
+        display: grid;
+        grid-template-columns: minmax(230px, 330px) 1fr auto;
+        gap: 10px;
+        align-items: center;
+        pointer-events: none;
+      }
+      .map-nav > * { pointer-events: auto; }
+      .map-search {
+        position: relative;
+        display:flex;
+        align-items:center;
+        gap:9px;
+        min-height:48px;
+        padding: 0 13px;
+        background:rgba(255,255,255,.96);
+        border:1px solid rgba(7,29,65,.12);
+        border-radius:24px;
+        box-shadow:0 10px 28px rgba(7,29,65,.14);
+      }
+      .map-search::before { content:'⌕'; color:#1351b4; font-size:24px; line-height:1; }
+      .map-search input { width:100%; height:42px; border:0; outline:0; background:transparent; font: 13px Verdana,Arial,sans-serif; }
+      .map-search .suggestions { top:54px; width:100%; }
+      .region-nav {
+        display:flex;
+        justify-content:center;
+        gap:6px;
+        flex-wrap:wrap;
+        padding:6px;
+        border:1px solid rgba(7,29,65,.12);
+        border-radius:26px;
+        background:rgba(255,255,255,.92);
+        box-shadow:0 10px 28px rgba(7,29,65,.12);
+        backdrop-filter:blur(10px);
+      }
+      .region-chip, .state-chip {
+        min-height:34px;
+        padding:0 12px;
+        border:0;
+        border-radius:18px;
+        background:transparent;
+        color:#415164;
+        font:700 11px Verdana,Arial,sans-serif;
+        cursor:pointer;
+        transition:background .18s,color .18s,transform .18s;
+      }
+      .region-chip:hover,.state-chip:hover { background:#e8f1ff; color:#0c326f; transform:translateY(-1px); }
+      .region-chip.active,.state-chip.active { background:#1351b4; color:#fff; }
+      .state-nav {
+        position:absolute;
+        z-index:7;
+        top:78px;
+        left:50%;
+        transform:translateX(-50%);
+        display:none;
+        gap:5px;
+        flex-wrap:wrap;
+        justify-content:center;
+        max-width:min(720px,75%);
+        padding:7px;
+        border:1px solid rgba(7,29,65,.12);
+        border-radius:22px;
+        background:rgba(255,255,255,.94);
+        box-shadow:0 8px 24px rgba(7,29,65,.12);
+      }
+      .state-nav.visible { display:flex; animation:navIn .22s ease both; }
+      @keyframes navIn { from{opacity:0;transform:translate(-50%,-7px)} to{opacity:1;transform:translate(-50%,0)} }
+      .filter-trigger {
+        min-height:46px;
+        padding:0 16px;
+        border:1px solid #1351b4;
+        border-radius:23px;
+        background:#fff;
+        color:#1351b4;
+        font:700 12px Verdana,Arial,sans-serif;
+        box-shadow:0 10px 28px rgba(7,29,65,.12);
+        cursor:pointer;
+      }
+      .filter-trigger:hover { background:#e8f1ff; }
+      .filter-badge { display:none; margin-left:6px; min-width:18px; height:18px; padding:0 5px; align-items:center; justify-content:center; border-radius:9px; background:#ffcd07; color:#071d41; font-size:10px; }
+      .filter-badge.visible { display:inline-flex; }
+
+      /* Filtros sempre em drawer, não dependem da resolução física */
+      .tools {
+        position:fixed;
+        z-index:70;
+        inset:0 auto 0 0;
+        width:min(400px,92vw);
+        margin:0;
+        padding:22px;
+        display:flex;
+        flex-direction:column;
+        flex-wrap:nowrap;
+        gap:13px;
+        background:#fff;
+        border:0;
+        border-radius:0 18px 18px 0;
+        box-shadow:18px 0 48px rgba(7,29,65,.28);
+        transform:translateX(-105%);
+        transition:transform .22s ease;
+        visibility:hidden;
+        overflow:auto;
+      }
+      .tools.open { transform:translateX(0); visibility:visible; }
+      .tools .searchbox { display:none; }
+      .tools select { width:100%; min-height:46px; border-radius:8px; background:#fff; }
+      .filter-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:14px; border-bottom:1px solid #d9e1e7; }
+      .filter-head strong { color:#071d41; font-size:19px; }
+      .filter-close { width:38px;height:38px;border:1px solid #1351b4;border-radius:50%;background:#fff;color:#1351b4;font-size:22px;cursor:pointer; }
+      .filter-label { display:block; margin:2px 0 -7px; color:#415164; font-size:11px; font-weight:700; }
+      .filter-apply { min-height:46px;border:0;border-radius:24px;background:#1351b4;color:#fff;font-weight:700;cursor:pointer; }
+      .filter-backdrop { display:none;position:fixed;inset:0;z-index:69;background:rgba(7,29,65,.42);backdrop-filter:blur(2px); }
+      .filter-backdrop.open { display:block; }
+
+      /* Legenda-matriz compacta */
+      .legend {
+        left:18px; bottom:18px; width:258px; padding:12px 14px;
+        border:1px solid rgba(7,29,65,.12); border-radius:14px;
+        box-shadow:0 10px 28px rgba(7,29,65,.13);
+      }
+      .legend-title { color:#071d41; font-size:12px; }
+      .quad-matrix { display:grid; grid-template-columns:70px 1fr 1fr; grid-template-rows:20px 1fr 1fr; gap:5px; align-items:stretch; }
+      .axis-top { grid-column:2/4; text-align:center; color:#66758a; font-size:9px; font-weight:700; letter-spacing:.05em; }
+      .axis-side { display:grid; place-items:center; color:#66758a; font-size:9px; font-weight:700; line-height:1.15; text-align:center; }
+      .quad-cell { display:flex; align-items:center; gap:5px; min-height:38px; padding:6px; border-radius:8px; color:#fff; font-size:9px; line-height:1.15; }
+      .quad-cell b { font-size:11px; }
+      .quad-cell.q1{background:var(--q1)} .quad-cell.q2{background:var(--q2)} .quad-cell.q3{background:var(--q3)} .quad-cell.q4{background:var(--q4)}
+      .legend-selected { margin-top:8px; padding-top:8px; border-top:1px solid #d9e1e7; font-size:10px; color:#415164; }
+
+      /* Painel municipal: hierarquia e densidade */
+      .municipio-head { margin-bottom:12px; }
+      .municipio-head h2 { margin-bottom:4px; }
+      .municipio-pop { font-size:13px; }
+      .model-strip { gap:8px; margin:10px 0; }
+      .model-card { min-height:138px; padding:14px; position:relative; overflow:hidden; }
+      .model-card b { font-size:26px; }
+      .percentile-viz { margin-top:10px; }
+      .percentile-track { position:relative; height:5px; border-radius:4px; background:rgba(255,255,255,.28); }
+      .percentile-marker { position:absolute; top:50%; width:13px;height:13px;border-radius:50%;background:#ffcd07;border:2px solid #fff;transform:translate(-50%,-50%);box-shadow:0 2px 5px rgba(0,0,0,.22); }
+      .percentile-caption { display:flex; justify-content:space-between; margin-top:5px; color:#e5efff; font-size:9px; }
+      .quadrant-hero { margin:12px 0; padding:14px 15px; border-radius:12px; color:#fff; }
+      .quadrant-hero.q1{background:var(--q1)} .quadrant-hero.q2{background:var(--q2)} .quadrant-hero.q3{background:var(--q3)} .quadrant-hero.q4{background:var(--q4)}
+      .quadrant-hero strong { display:block; font-size:14px; letter-spacing:.01em; text-transform:uppercase; }
+      .quadrant-hero p { margin:6px 0 9px; font-size:11px; line-height:1.45; }
+      .quadrant-link { padding:0;border:0;background:transparent;color:#fff;text-decoration:underline;font-weight:700;cursor:pointer; }
+      .cards { grid-template-columns:1fr 1fr; gap:8px; margin:10px 0; }
+      .card { min-height:96px; padding:11px 12px; display:flex; flex-direction:column; }
+      .card b { order:-1; margin:0 0 5px; font-size:22px; }
+      .card .indicator-label { font-size:11px; line-height:1.3; font-weight:700; color:#2f3d4d; }
+      .card .meta { margin-top:auto; padding-top:6px; font-size:9px; line-height:1.35; }
+      .open-data-button { width:100%; min-height:46px; margin-top:12px; border:1px solid #1351b4; border-radius:24px; background:#fff; color:#1351b4; font-weight:700; cursor:pointer; }
+      .open-data-button:hover { background:#e8f1ff; }
+
+      /* Base completa em modal, não no painel lateral */
+      .data-modal { position:fixed;inset:0;z-index:90;display:none;align-items:stretch;justify-content:flex-end;background:rgba(7,29,65,.58);backdrop-filter:blur(3px); }
+      .data-modal.open { display:flex; }
+      .data-dialog { width:min(920px,96vw); height:100%; display:flex; flex-direction:column; background:#f8fafc; box-shadow:-20px 0 60px rgba(7,29,65,.32); animation:drawerIn .24s ease both; }
+      @keyframes drawerIn { from{transform:translateX(60px);opacity:.4} to{transform:none;opacity:1} }
+      .data-modal-head { padding:20px 22px 14px; background:#fff; border-bottom:1px solid #d9e1e7; }
+      .data-modal-row { display:flex;align-items:flex-start;justify-content:space-between;gap:18px; }
+      .data-modal-head h2 { margin:0 0 4px;color:#071d41; }
+      .data-actions { display:flex;gap:8px;flex-wrap:wrap; }
+      .data-action { min-height:38px;padding:0 13px;border:1px solid #1351b4;border-radius:20px;background:#fff;color:#1351b4;font-weight:700;cursor:pointer; }
+      .data-action.primary { background:#1351b4;color:#fff; }
+      .data-modal-search { width:100%;height:44px;margin-top:14px;padding:0 13px;border:1px solid #bfc9d4;border-radius:8px;background:#fff; }
+      .data-modal-body { flex:1;overflow:auto;padding:14px 22px 30px; }
+
+      /* Drawer de detalhe em telas compactas; 72/28 em telas amplas */
+      @media (max-width: 1180px) {
+        .app { grid-template-columns:1fr; }
+        .mapbox { height:calc(100vh - 104px); }
+        .side { position:fixed;z-index:50;top:0;right:0;bottom:0;width:min(430px,94vw);transform:translateX(104%);transition:transform .24s ease;border-radius:18px 0 0 18px; }
+        body.detail-open .side { transform:translateX(0); }
+        .detail-close { display:grid;place-items:center;position:sticky;top:0;margin-left:auto;width:38px;height:38px;border:1px solid #1351b4;border-radius:50%;background:#fff;color:#1351b4;font-size:20px;cursor:pointer;z-index:2; }
+        .map-nav { grid-template-columns:minmax(220px,1fr) auto; }
+        .region-nav { grid-column:1/3; grid-row:2; justify-self:start; }
+        .state-nav { top:126px; }
+      }
+      @media (max-width: 760px) {
+        .map-nav { top:10px;left:10px;right:10px;grid-template-columns:1fr auto; }
+        .region-nav { max-width:calc(100vw - 20px);overflow:auto;justify-content:flex-start;flex-wrap:nowrap; }
+        .state-nav { top:123px;left:10px;right:10px;transform:none;max-width:none;justify-content:flex-start;overflow:auto;flex-wrap:nowrap; }
+        .legend { width:214px;left:10px;bottom:10px; }
+        .quad-matrix { grid-template-columns:58px 1fr 1fr; }
+        .data-dialog { width:100vw; }
+      }
+
+      /* Ajustes cartográficos v13.2.1 */
+      :root { --selected: #ffcd07; }
+      .legend { width:338px; padding:16px 18px; }
+      .legend-title { font-size:14px; margin-bottom:10px; }
+      .quad-matrix { grid-template-columns:86px 1fr 1fr; grid-template-rows:24px 1fr 1fr; gap:7px; }
+      .axis-top,.axis-side { font-size:10px; }
+      .quad-cell { min-height:50px; padding:9px 10px; font-size:10px; }
+      .quad-cell b { font-size:15px; }
+      .legend-selected { margin-top:10px; padding-top:10px; font-size:11px; }
+      .selected-swatch { background:#ffcd07 !important; border-color:#071d41 !important; }
+      @media(max-width:760px){.legend{width:286px;max-width:calc(100vw - 20px)}.quad-matrix{grid-template-columns:72px 1fr 1fr}.quad-cell{min-height:44px}}
+
+      /* Matriz recolhível: compacta por padrão e expansível sob demanda */
+      .legend {
+        width: auto;
+        max-width: 338px;
+        padding: 0;
+        overflow: hidden;
+        transition: width .22s ease, max-width .22s ease, box-shadow .22s ease;
+      }
+      .legend-toggle {
+        display:flex;
+        align-items:center;
+        gap:9px;
+        width:100%;
+        min-height:46px;
+        padding:0 14px;
+        border:0;
+        background:rgba(255,255,255,.97);
+        color:#071d41;
+        font:700 12px Verdana,Arial,sans-serif;
+        cursor:pointer;
+        white-space:nowrap;
+      }
+      .legend-toggle:hover,.legend-toggle:focus-visible { background:#e8f1ff; outline:none; }
+      .legend-mini-grid {
+        display:grid;
+        grid-template-columns:repeat(2,8px);
+        grid-template-rows:repeat(2,8px);
+        gap:2px;
+        flex:0 0 auto;
+      }
+      .legend-mini-grid i { display:block; width:8px; height:8px; border-radius:2px; }
+      .legend-mini-grid i:nth-child(1){background:var(--q2)}
+      .legend-mini-grid i:nth-child(2){background:var(--q1)}
+      .legend-mini-grid i:nth-child(3){background:var(--q4)}
+      .legend-mini-grid i:nth-child(4){background:var(--q3)}
+      .legend-chevron { margin-left:auto; transition:transform .2s ease; font-size:15px; }
+      .legend-content {
+        max-height:0;
+        opacity:0;
+        padding:0 18px;
+        background:rgba(255,255,255,.97);
+        transition:max-height .24s ease, opacity .18s ease, padding .24s ease;
+        pointer-events:none;
+      }
+      .legend.open { width:338px; }
+      .legend.open .legend-content { max-height:280px; opacity:1; padding:2px 18px 16px; pointer-events:auto; }
+      .legend.open .legend-chevron { transform:rotate(180deg); }
+      .legend .legend-title { display:none; }
+      @media(max-width:760px){
+        .legend.open{width:min(286px,calc(100vw - 20px))}
+        .legend-toggle{min-height:42px;padding:0 12px}
+      }
+
+      /* Refinos finais da matriz e da visão regional */
+      .legend.open { width: 360px; max-width: calc(100vw - 24px); }
+      .legend.open .legend-content { padding: 8px 18px 16px; }
+      .quad-matrix {
+        grid-template-columns: 92px minmax(96px,1fr) minmax(96px,1fr);
+        grid-template-rows: 28px 54px 54px;
+        column-gap: 8px;
+        row-gap: 8px;
+        align-items: stretch;
+      }
+      .axis-top {
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        align-items:center;
+        padding:0 8px;
+        text-align:center;
+        line-height:1.15;
+      }
+      .axis-top .axis-name { grid-column:1/3; font-size:9px; letter-spacing:.06em; }
+      .axis-top .axis-low,.axis-top .axis-high { font-size:9px; font-weight:700; }
+      .axis-side { padding:0 5px; line-height:1.2; }
+      .quad-cell { min-width:0; min-height:54px; padding:8px 9px; gap:6px; }
+      .quad-cell b { flex:0 0 auto; font-size:16px; }
+      .quad-cell span { min-width:0; font-size:10px; line-height:1.15; }
+      .legend-help { margin:10px 0 0; padding-top:9px; border-top:1px solid #d9e1e7; color:#415164; font-size:10px; line-height:1.4; }
+      @media(max-width:760px){
+        .legend.open{width:min(326px,calc(100vw - 20px))}
+        .quad-matrix{grid-template-columns:82px minmax(88px,1fr) minmax(88px,1fr)}
+      }
+
+      /* Base municipal completa: interface moderna */
+      .data-dialog { width:min(980px,97vw); background:#f3f6fa; }
+      .data-modal-head { position:sticky; top:0; z-index:3; padding:22px 26px 18px; border-bottom:1px solid #d8e1e7; box-shadow:0 6px 20px rgba(7,29,65,.07); }
+      .data-modal-row { align-items:center; }
+      .data-title-wrap { display:flex; align-items:center; gap:13px; min-width:0; }
+      .data-title-icon { display:grid; place-items:center; width:44px; height:44px; flex:0 0 44px; border-radius:13px; background:#e8f1ff; color:#1351b4; font-size:21px; }
+      .data-modal-head h2 { font-size:22px; letter-spacing:-.02em; }
+      .data-summary { display:flex; gap:7px; flex-wrap:wrap; margin-top:5px; }
+      .data-summary-chip { display:inline-flex; align-items:center; min-height:25px; padding:0 9px; border-radius:13px; background:#eef2f6; color:#526174; font-size:10px; font-weight:700; }
+      .data-actions { flex-wrap:nowrap; }
+      .data-action { min-height:42px; padding:0 15px; transition:background .18s,transform .18s,box-shadow .18s; }
+      .data-action:hover { background:#e8f1ff; transform:translateY(-1px); }
+      .data-action.primary:hover { background:#0c326f; box-shadow:0 6px 16px rgba(19,81,180,.2); }
+      .data-search-wrap { position:relative; margin-top:16px; }
+      .data-search-wrap::before { content:'⌕'; position:absolute; left:15px; top:50%; transform:translateY(-52%); color:#1351b4; font-size:22px; z-index:1; }
+      .data-modal-search { height:48px; margin:0; padding:0 44px; border:1px solid #c7d2dd; border-radius:24px; box-shadow:0 3px 10px rgba(7,29,65,.05); }
+      .data-modal-search:focus { border-color:#1351b4; box-shadow:0 0 0 3px rgba(19,81,180,.14); outline:none; }
+      .data-search-clear { position:absolute; right:8px; top:50%; transform:translateY(-50%); display:none; width:34px; height:34px; border:0; border-radius:50%; background:#eef2f6; color:#415164; cursor:pointer; }
+      .data-search-clear.visible { display:grid; place-items:center; }
+      .data-modal-body { padding:20px 26px 36px; }
+      .data-intro { display:flex; justify-content:space-between; gap:16px; align-items:center; margin-bottom:15px; padding:0 2px; color:#526174; font-size:11px; }
+      .data-intro strong { color:#071d41; }
+      .family { margin:10px 0; border:1px solid #dce3ea; border-radius:14px; background:#fff; box-shadow:0 4px 14px rgba(7,29,65,.055); transition:transform .18s,box-shadow .18s,border-color .18s; }
+      .family:hover { transform:translateY(-1px); border-color:#b8cae1; box-shadow:0 8px 22px rgba(7,29,65,.09); }
+      .family > summary { display:grid; grid-template-columns:42px 1fr auto 24px; align-items:center; gap:12px; min-height:66px; padding:10px 16px; background:#fff; color:#071d41; }
+      .family > summary::-webkit-details-marker,.theme > summary::-webkit-details-marker { display:none; }
+      .family > summary::after,.theme > summary::after { content:'›'; display:grid; place-items:center; color:#526174; font-size:22px; transition:transform .18s; }
+      .family[open] > summary::after,.theme[open] > summary::after { transform:rotate(90deg); }
+      .family[open] > summary { border-bottom:1px solid #e4e9ef; background:#f8fbff; }
+      .family-icon { display:grid; place-items:center; width:40px; height:40px; border-radius:12px; background:#e8f1ff; color:#1351b4; font-size:18px; }
+      .family-copy { min-width:0; }
+      .family-name { display:block; font-size:14px; line-height:1.25; }
+      .family-caption { display:block; margin-top:3px; color:#66758a; font-size:10px; font-weight:400; }
+      .family .badge { float:none; min-width:36px; text-align:center; padding:4px 9px; background:#eef2f6; color:#415164; }
+      .theme { margin:10px 14px 14px; border-color:#e2e8ef; border-radius:11px; background:#fafcff; }
+      .theme > summary { display:grid; grid-template-columns:1fr auto 20px; align-items:center; gap:10px; padding:12px 14px; background:#f4f7fa; color:#2f4054; font-size:12px; }
+      .theme[open] > summary { background:#edf4ff; color:#0c326f; }
+      .var { margin:0 12px 10px; padding:14px; border:1px solid #e2e8ef; border-radius:10px; background:#fff; }
+      .var:first-of-type { margin-top:12px; }
+      .var strong { color:#22364d; line-height:1.35; }
+      .value { margin:7px 0 9px; font-size:20px; }
+      .tech > summary { display:inline-flex; align-items:center; gap:5px; padding:5px 8px; border-radius:6px; color:#1351b4; cursor:pointer; font-weight:700; }
+      .tech > summary:hover { background:#e8f1ff; }
+      .tech > div { margin-top:7px; padding:10px 12px; border-left:3px solid #d4e5ff; background:#f7f9fc; line-height:1.55; }
+      .data-empty { display:none; margin:30px auto; max-width:440px; padding:26px; border:1px dashed #b9c7d5; border-radius:14px; background:#fff; color:#526174; text-align:center; }
+      .data-empty.visible { display:block; }
+      @media(max-width:650px){
+        .data-modal-head{padding:16px}.data-modal-row{align-items:flex-start;flex-direction:column}.data-actions{width:100%}.data-action{flex:1}.data-modal-body{padding:14px 14px 28px}.family > summary{grid-template-columns:38px 1fr auto 18px;padding:9px 11px}.family-caption{display:none}
+      }
+
+      /* Correção de sobreposição no cabeçalho da base completa */
+      .data-modal-head { padding-bottom: 20px; }
+      .data-modal-row { min-height: 70px; }
+      .data-title-wrap { align-items: flex-start; }
+      .data-summary { margin-top: 7px; }
+      .data-search-wrap { margin-top: 18px; clear: both; }
+      .data-modal-body { padding-top: 18px; }
+      .data-intro { margin: 0 2px 16px; min-height: 24px; }
+      @media (max-width:650px){
+        .data-modal-row { min-height: 0; }
+        .data-search-wrap { margin-top: 14px; }
+      }
+
+      /* Correção definitiva: busca em faixa própria, sem sobreposição */
+      .data-modal-head { position:relative; top:auto; flex:0 0 auto; padding:20px 26px 16px; box-shadow:none; }
+      .data-modal-row { min-height:64px; }
+      .data-search-panel { position:relative; z-index:2; flex:0 0 auto; padding:14px 26px 16px; background:#f3f6fa; border-bottom:1px solid #d8e1e7; }
+      .data-search-panel .data-search-wrap { margin:0; }
+      .data-modal-body { padding:14px 26px 36px; }
+      .data-modal-body > .family:first-child { margin-top:0; }
+      @media(max-width:650px){
+        .data-modal-head{padding:15px 16px 12px}
+        .data-search-panel{padding:12px 16px 14px}
+        .data-modal-body{padding:12px 14px 28px}
+      }
+
+      /* Ajuste final: chips totalmente contidos no cabeçalho */
+      .data-modal-head {
+        position: relative !important;
+        top: auto !important;
+        flex: 0 0 auto;
+        min-height: 122px;
+        padding: 20px 26px 20px !important;
+        overflow: hidden;
+        box-shadow: none !important;
+      }
+      .data-modal-row {
+        min-height: 80px !important;
+        align-items: flex-start !important;
+      }
+      .data-title-wrap { align-items: flex-start !important; }
+      .data-summary {
+        position: static !important;
+        margin: 8px 0 0 !important;
+        padding: 0 0 4px !important;
+      }
+      .data-summary-chip {
+        position: static !important;
+        transform: none !important;
+        min-height: 24px;
+        line-height: 24px;
+      }
+      .data-search-panel {
+        flex: 0 0 auto;
+        padding: 15px 26px 16px !important;
+        border-top: 1px solid #d8e1e7;
+      }
+      @media(max-width:650px){
+        .data-modal-head{min-height:auto;padding:15px 16px 17px !important;overflow:visible}
+        .data-modal-row{min-height:0 !important}
+        .data-summary{margin-top:9px !important;padding-bottom:3px !important}
+        .data-search-panel{padding:13px 16px 14px !important}
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="study-modal"
+      id="studyModal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="studyTitle"
+    >
+      <section class="study-dialog">
+        <div class="study-head">
+          <span class="study-kicker">Aviso importante</span>
+          <h2 id="studyTitle">Painel em fase de construção</h2>
+          <p>
+            Este site apresenta resultados de um estudo exploratório sobre
+            capacidade estatal e entrega governamental nos municípios
+            brasileiros.
+          </p>
+        </div>
+        <div class="study-body">
+          <p><strong>Antes de usar os resultados, considere:</strong></p>
+          <ul class="study-points">
+            <li>
+              O painel não é um ranking de municípios e não mede o desempenho de
+              gestores ou mandatos.
+            </li>
+            <li>
+              ICE, IEG, quadrantes e perfis apoiam diagnóstico e priorização,
+              mas não substituem evidências locais nem conhecimento de campo.
+            </li>
+            <li>
+              O contexto socioeconômico explica parte relevante da tipologia.
+              Compare preferencialmente municípios de porte, região e contexto
+              semelhantes.
+            </li>
+            <li>
+              Municípios próximos aos pontos de corte podem mudar de quadrante
+              por pequenas diferenças. Para decisões específicas, considere os
+              valores contínuos de ICE e IEG.
+            </li>
+            <li>
+              A ausência de um valor significa indisponibilidade do dado, e não
+              ausência do atributo.
+            </li>
+            <li>
+              Perfis, indicadores e interpretações podem ser revistos durante a
+              construção, validação metodológica e conferência das fontes.
+            </li>
+          </ul>
+          <div class="study-warning">
+            <strong>Uso responsável:</strong> não utilize este painel
+            isoladamente para definir elegibilidade, sanção, premiação,
+            transferência de recursos ou avaliação de desempenho.
+          </div>
+          <div class="study-actions">
+            <label
+              ><input type="checkbox" id="dontShowStudy" /> Não mostrar
+              novamente neste navegador</label
+            ><button class="study-button" id="acceptStudy" type="button">
+              Entendi e quero continuar
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+    <div class="method-modal" id="methodModal" hidden role="dialog" aria-modal="true" aria-labelledby="methodTitle">
+      <section class="method-dialog">
+        <div class="method-head">
+          <div><h2 id="methodTitle">Entenda os índices</h2><p>Como o ICE e o IEG foram construídos e como interpretar os resultados.</p></div>
+          <button class="method-close" id="closeMethod" type="button" aria-label="Fechar">×</button>
+        </div>
+        <div class="method-body">
+          <p class="method-intro"><strong>O painel separa capacidade de entrega.</strong> O ICE descreve a estrutura e a atuação estatal municipal. O IEG reúne resultados que chegam à população. Os dois índices são analisados separadamente e depois cruzados nos quatro quadrantes do mapa.</p>
+          <div class="method-grid">
+            <article class="method-card"><h3>ICE · Capacidade Estatal</h3><p><strong>41 componentes finais</strong> em duas dimensões:</p><ul><li><strong>Técnico-administrativa:</strong> 14 itens sobre administração, pessoal, tributação, cadastros, serviços digitais e controle interno.</li><li><strong>Político-institucional:</strong> 27 itens sobre legislação urbana, conselhos, conferências e consórcios públicos.</li></ul></article>
+            <article class="method-card"><h3>IEG · Entrega Governamental</h3><p><strong>7 componentes finais</strong> em duas dimensões:</p><ul><li><strong>Cobertura de infraestrutura:</strong> água, esgoto e coleta de lixo.</li><li><strong>Resultado de bem-estar:</strong> IDEB, creche, idade média ao morrer e pobreza.</li></ul><p>A pobreza entra com sinal invertido para manter a mesma direção interpretativa dos demais componentes.</p></article>
+            <article class="method-card method-wide"><h3>Tratamento e cálculo</h3><p>As variáveis têm escalas diferentes e foram tratadas antes da composição. Respostas binárias e variáveis contínuas foram analisadas de acordo com sua natureza. Os valores municipais exibidos na abertura dos cartões ICE e IEG são os componentes finais do modelo, mas <strong>não devem ser somados diretamente</strong> para tentar reproduzir a pontuação.</p><div class="method-scale"><div><b>0</b>Média nacional</div><div><b>valor positivo</b>Acima da média</div><div><b>valor negativo</b>Abaixo da média</div></div></article>
+            <article class="method-card"><h3>Quatro quadrantes</h3><ul><li>Q1 · alta capacidade e alta entrega</li><li>Q2 · alta capacidade e baixa entrega</li><li>Q3 · baixa capacidade e alta entrega</li><li>Q4 · baixa capacidade e baixa entrega</li></ul><p>Os cortes usam as medianas nacionais de ICE e IEG.</p></article>
+            <article class="method-card method-warning"><h3>Leitura responsável</h3><p>O painel é exploratório, não é ranking e não mede desempenho individual de gestores. Municípios próximos dos cortes podem mudar de quadrante por diferenças pequenas. A ausência de valor indica indisponibilidade do dado, não ausência do atributo.</p></article>
+          </div>
+        </div>
+      </section>
+    </div>
+    <header class="gov-header">
+      <div class="gov-colorbar" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+      <div class="gov-header-inner">
+        <div class="gov-brand">
+          <div class="gov-eyebrow">Escola Nacional de Administração Pública · Ciência de Dados</div>
+          <h1>Capacidade estatal e entrega nos municípios brasileiros</h1>
+          <div class="gov-subtitle">Painel municipal · versão 13 · setembro de 2026</div>
+        </div>
+        <nav class="gov-actions" aria-label="Navegação do painel">
+          <button class="gov-button" type="button" id="openMethod">Entenda os índices</button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="data-modal" id="dataModal" role="dialog" aria-modal="true" aria-labelledby="dataModalTitle">
+      <section class="data-dialog">
+        <header class="data-modal-head">
+          <div class="data-modal-row"><div class="data-title-wrap"><span class="data-title-icon" aria-hidden="true">▦</span><div><h2 id="dataModalTitle">Base municipal completa</h2><span class="meta" id="dataModalSubtitle"></span><div class="data-summary" id="dataSummary"></div></div></div><div class="data-actions"><button class="data-action primary" id="exportCsv" type="button">Exportar CSV</button><button class="data-action" id="closeData" type="button">Fechar</button></div></div>
+        </header>
+        <div class="data-search-panel"><div class="data-search-wrap"><input class="data-modal-search" id="dataSearch" placeholder="Buscar variável, tema, fonte ou código" /><button class="data-search-clear" id="dataSearchClear" type="button" aria-label="Limpar busca">×</button></div></div>
+        <div class="data-modal-body" id="dataModalBody"></div>
+      </section>
+    </div>
+    <main class="app">
+      <section class="mapbox">
+        <div class="map-nav" aria-label="Navegação geográfica">
+          <div class="map-search searchbox">
+            <input id="mq" autocomplete="off" placeholder="Buscar município" aria-label="Buscar município" />
+            <div id="suggestions" class="suggestions"></div>
+          </div>
+          <nav class="region-nav" id="regionNav" aria-label="Regiões do Brasil"></nav>
+          <button class="filter-trigger" id="filterTrigger" type="button">Mais filtros<span class="filter-badge" id="filterBadge">0</span></button>
+        </div>
+        <nav class="state-nav" id="stateNav" aria-label="Estados da região selecionada"></nav>
+        <div class="filter-backdrop" id="filterBackdrop"></div>
+        <div class="tools" id="filterDrawer" role="dialog" aria-modal="true" aria-labelledby="filterTitle">
+          <div class="filter-head"><strong id="filterTitle">Refinar o mapa</strong><button class="filter-close" id="filterClose" type="button" aria-label="Fechar filtros">×</button></div>
+          <span class="filter-label">Estado</span>
+          <select id="uf"><option value="">Todos os estados</option></select>
+          <span class="filter-label">Quadrante</span>
+          <select id="quad"><option value="">Todos os quadrantes</option><option value="Q1">Alta capacidade / alta entrega</option><option value="Q2">Alta capacidade / baixa entrega</option><option value="Q3">Baixa capacidade / alta entrega</option><option value="Q4">Baixa capacidade / baixa entrega</option></select>
+          <span class="filter-label">Porte municipal</span>
+          <select id="porte"><option value="">Todos os portes</option></select>
+          <span class="filter-label">PIB per capita</span>
+          <select id="pib"><option value="">Todos os quintis</option><option value="1">Q1 · até R$ 15.616,44</option><option value="2">Q2 · R$ 15.616,44 a R$ 24.380,54</option><option value="3">Q3 · R$ 24.380,54 a R$ 37.761,84</option><option value="4">Q4 · R$ 37.761,84 a R$ 56.748,12</option><option value="5">Q5 · acima de R$ 56.748,12</option></select>
+          <button class="filter-apply" id="filterApply" type="button">Aplicar e voltar ao mapa</button>
+        </div>
+        <div class="legend" id="legend" aria-label="Matriz dos quadrantes">
+          <button class="legend-toggle" id="legendToggle" type="button" aria-expanded="false" aria-controls="legendContent">
+            <span class="legend-mini-grid" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+            <span>Entenda os quadrantes</span><span class="legend-chevron" aria-hidden="true">⌃</span>
+          </button>
+          <div class="legend-content" id="legendContent">
+            <div class="quad-matrix">
+              <div></div><div class="axis-top"><span class="axis-name">ENTREGA GOVERNAMENTAL</span><span class="axis-low">baixa</span><span class="axis-high">alta</span></div>
+              <div class="axis-side">CAPACIDADE<br>ESTATAL ALTA</div><div class="quad-cell q2"><b>Q2</b><span>alta capacidade<br>baixa entrega</span></div><div class="quad-cell q1"><b>Q1</b><span>alta capacidade<br>alta entrega</span></div>
+              <div class="axis-side">CAPACIDADE<br>ESTATAL BAIXA</div><div class="quad-cell q4"><b>Q4</b><span>baixa capacidade<br>baixa entrega</span></div><div class="quad-cell q3"><b>Q3</b><span>baixa capacidade<br>alta entrega</span></div>
+            </div>
+            <p class="legend-help">Os quadrantes combinam a posição do município no ICE e no IEG em relação aos cortes nacionais.</p>
+            <div class="legend-selected"><span class="swatch selected-swatch" style="display:inline-block;vertical-align:middle;margin-right:6px"></span>Município selecionado</div>
+          </div>
+        </div>
+        <canvas id="map"></canvas>
+      </section>
+      <aside class="side" id="side">
+        <div class="empty-state">
+          <strong>Base de dados municipais</strong><br /><br />Digite o nome, use os
+          filtros ou selecione no mapa.
+        </div>
+      </aside>
+    </main>
+    <script src="data/resumo.js"></script>
+    <script src="data/topologia.js"></script>
+    <script src="data/modelo_catalogo.js"></script>
+    <script>
+      const C = document.querySelector("#map"),
+        X = C.getContext("2d"),
+        S = document.querySelector("#side"),
+        UF = document.querySelector("#uf"),
+        QD = document.querySelector("#quad"),
+        PT = document.querySelector("#porte"),
+        PIB = document.querySelector("#pib"),
+        MQ = document.querySelector("#mq"),
+        SG = document.querySelector("#suggestions"),
+        REGION_NAV = document.querySelector("#regionNav"),
+        STATE_NAV = document.querySelector("#stateNav");
+      let H = [],
+        SEL = "",
+        ACTIVE = -1,
+        REGION = "",
+        ANIMATING = false,
+        CURRENT_MUN_PAYLOAD = null;
+      function polys(T) {
+        let O = Object.values(T.objects)[0],
+          A = T.arcs,
+          R = T.transform;
+        function arc(i) {
+          let v = i < 0;
+          if (v) i = ~i;
+          let x = 0,
+            y = 0,
+            z = A[i].map((p) => {
+              x += p[0];
+              y += p[1];
+              return [
+                x * R.scale[0] + R.translate[0],
+                y * R.scale[1] + R.translate[1],
+              ];
+            });
+          return v ? z.reverse() : z;
+        }
+        return O.geometries.flatMap((g) =>
+          (g.type === "Polygon" ? [g.arcs] : g.arcs).map((p) => ({
+            p: p.map((r) => r.flatMap(arc)),
+            d: g.properties || {},
+          })),
+        );
+      }
+      const P = polys(PAINEL_TOPOLOGY),
+        N = Object.values(PAINEL_RESUMO);
+      function txt(v) {
+        return String(v ?? "").trim();
+      }
+      function normal(v) {
+        return txt(v).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+      }
+      let B = [Infinity, Infinity, -Infinity, -Infinity];
+      P.forEach((o) =>
+        o.p.forEach((r) =>
+          r.forEach(
+            ([x, y]) =>
+              (B = [
+                Math.min(B[0], x),
+                Math.min(B[1], y),
+                Math.max(B[2], x),
+                Math.max(B[3], y),
+              ]),
+          ),
+        ),
+      );
+      let VIEW = B.slice();
+      function viewForUF(u) {
+        if (!u) return B.slice();
+        let b = [Infinity, Infinity, -Infinity, -Infinity];
+        P.forEach((o) => {
+          let c = String(o.d.cd_munic || "").replace(".0", ""),
+            m = PAINEL_RESUMO[c] || {};
+          if (m.uf === u)
+            o.p.forEach((r) =>
+              r.forEach(([x, y]) => {
+                b[0] = Math.min(b[0], x);
+                b[1] = Math.min(b[1], y);
+                b[2] = Math.max(b[2], x);
+                b[3] = Math.max(b[3], y);
+              }),
+            );
+        });
+        if (!isFinite(b[0])) return B.slice();
+        let dx = b[2] - b[0],
+          dy = b[3] - b[1],
+          pad = 0.12;
+        return [
+          b[0] - dx * pad,
+          b[1] - dy * pad,
+          b[2] + dx * pad,
+          b[3] + dy * pad,
+        ];
+      }
+      function viewForRegion(region) {
+        if (!region) return B.slice();
+        let b = [Infinity, Infinity, -Infinity, -Infinity];
+        P.forEach((o) => {
+          const c=String(o.d.cd_munic||"").replace(".0",""), m=PAINEL_RESUMO[c]||{};
+          if (m.regiao === region) o.p.forEach(r=>r.forEach(([x,y])=>{ b[0]=Math.min(b[0],x);b[1]=Math.min(b[1],y);b[2]=Math.max(b[2],x);b[3]=Math.max(b[3],y); }));
+        });
+        if(!isFinite(b[0])) return B.slice();
+        const dx=b[2]-b[0],dy=b[3]-b[1],pad=.14;
+        return [b[0]-dx*pad,b[1]-dy*pad,b[2]+dx*pad,b[3]+dy*pad];
+      }
+      function animateView(target, duration=520) {
+        const from=VIEW.slice(), start=performance.now(); ANIMATING=true;
+        function frame(now){ const t=Math.min(1,(now-start)/duration), e=1-Math.pow(1-t,3); VIEW=from.map((v,i)=>v+(target[i]-v)*e); draw(); if(t<1)requestAnimationFrame(frame);else{VIEW=target.slice();ANIMATING=false;draw();} }
+        requestAnimationFrame(frame);
+      }
+      function matches(m) {
+        return (
+          (!REGION || m.regiao === REGION) &&
+          (!UF.value || m.uf === UF.value) &&
+          (!QD.value || (m.quadrante || "").startsWith(QD.value)) &&
+          (!PT.value || txt(m.porte) === PT.value) &&
+          (!PIB.value || String(m.quintil_pib) === PIB.value)
+        );
+      }
+      function draw() {
+        let d = devicePixelRatio || 1,
+          w = C.clientWidth,
+          h = C.clientHeight;
+        C.width = w * d;
+        C.height = h * d;
+        X.setTransform(d, 0, 0, d, 0, 0);
+        X.clearRect(0, 0, w, h);
+        let V = VIEW,
+          sc = Math.min((w - 20) / (V[2] - V[0]), (h - 20) / (V[3] - V[1])),
+          ox = (w - sc * (V[2] - V[0])) / 2,
+          oy = (h - sc * (V[3] - V[1])) / 2,
+          active = REGION || UF.value || QD.value || PT.value || PIB.value;
+        H = [];
+        P.forEach((o) => {
+          let p = new Path2D();
+          o.p.forEach((r) =>
+            r.forEach(([x, y], i) => {
+              let xx = ox + (x - V[0]) * sc,
+                yy = h - (oy + (y - V[1]) * sc);
+              i ? p.lineTo(xx, yy) : p.moveTo(xx, yy);
+            }),
+          );
+          p.closePath();
+          let c = String(o.d.cd_munic || "").replace(".0", ""),
+            m = PAINEL_RESUMO[c] || {},
+            match = matches(m),
+            col =
+              { Q1: "#2f855a", Q2: "#d97706", Q3: "#2b6cb0", Q4: "#c2413b" }[
+                (m.quadrante || "").slice(0, 2)
+              ] || "#cad5df";
+          X.globalAlpha = active ? (match ? 1 : 0.08) : 0.92;
+          X.fillStyle = c === SEL ? "#ffcd07" : col;
+          X.fill(p);
+          X.globalAlpha = 1;
+          const regionalView = REGION && !UF.value;
+          X.strokeStyle = c === SEL
+            ? "#071d41"
+            : regionalView
+              ? (match ? "rgba(255,255,255,.30)" : "rgba(0,0,0,0)")
+              : match && active
+                ? "rgba(7,29,65,.58)"
+                : "rgba(255,255,255,.72)";
+          X.lineWidth = c === SEL ? 2.8 : regionalView ? (match ? 0.10 : 0) : match && active ? 0.65 : 0.18;
+          X.stroke(p);
+          H.push({ p, c, match });
+        });
+
+      }
+      addEventListener("resize", draw);
+      // --- Seleção de município diretamente no mapa ---
+      let updateFilterBadge = () => {};
+      function hitAt(evt) {
+        const r = C.getBoundingClientRect(),
+          x = evt.clientX - r.left,
+          y = evt.clientY - r.top,
+          active = REGION || UF.value || QD.value || PT.value || PIB.value;
+        for (let i = H.length - 1; i >= 0; i--) {
+          const o = H[i];
+          if (active && !o.match) continue;
+          if (X.isPointInPath(o.p, x * (C.width / r.width) / (devicePixelRatio || 1), y * (C.height / r.height) / (devicePixelRatio || 1)))
+            return o;
+        }
+        return null;
+      }
+      C.addEventListener("click", (e) => {
+        if (ANIMATING) return;
+        const hit = hitAt(e);
+        if (hit && hit.c) load(hit.c);
+      });
+      C.addEventListener("mousemove", (e) => {
+        if (ANIMATING) return;
+        C.style.cursor = hitAt(e) ? "pointer" : "default";
+      });
+      C.addEventListener("mouseleave", () => (C.style.cursor = "default"));
+      const REGIOES=["Brasil",...new Set(N.map(x=>x.regiao).filter(Boolean))];
+      function renderRegions(){ REGION_NAV.innerHTML=REGIOES.map(r=>`<button type="button" class="region-chip ${(!REGION&&r==="Brasil")||REGION===r?"active":""}" data-region="${esc(r)}">${esc(r)}</button>`).join(""); REGION_NAV.querySelectorAll("button").forEach(b=>b.onclick=()=>selectRegion(b.dataset.region)); }
+      function renderStates(){ const states=[...new Set(N.filter(x=>!REGION||x.regiao===REGION).map(x=>x.uf).filter(Boolean))].sort(); STATE_NAV.innerHTML=states.map(u=>`<button type="button" class="state-chip ${UF.value===u?"active":""}" data-uf="${esc(u)}">${esc(u)}</button>`).join(""); STATE_NAV.classList.toggle("visible",!!REGION); STATE_NAV.querySelectorAll("button").forEach(b=>b.onclick=()=>selectState(b.dataset.uf)); }
+      function selectRegion(region){ REGION=region==="Brasil"?"":region; UF.value=""; SEL=""; renderRegions();renderStates();closeSuggestions();animateView(REGION?viewForRegion(REGION):B.slice()); }
+      function selectState(uf){ UF.value=uf; const m=N.find(x=>x.uf===uf); if(m?.regiao)REGION=m.regiao; SEL="";renderRegions();renderStates();closeSuggestions();animateView(viewForUF(uf)); }
+      UF.onchange=()=>{ const m=N.find(x=>x.uf===UF.value); REGION=m?.regiao||"";SEL="";renderRegions();renderStates();closeSuggestions();animateView(UF.value?viewForUF(UF.value):(REGION?viewForRegion(REGION):B.slice())); };
+      QD.onchange=()=>{closeSuggestions();updateFilterBadge();draw()};
+      PT.onchange=()=>{closeSuggestions();updateFilterBadge();draw()};
+      PIB.onchange=()=>{closeSuggestions();updateFilterBadge();draw()};
+      [...new Set(N.map(x=>x.uf).filter(Boolean))].sort().forEach(x=>UF.add(new Option(x,x)));
+      [...new Set(N.map(x=>txt(x.porte)).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"pt-BR",{numeric:true})).forEach(x=>PT.add(new Option(x,x)));
+      renderRegions();renderStates();draw();
+      function esc(v) {
+        return String(v ?? "").replace(
+          /[&<>"']/g,
+          (c) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#39;",
+            })[c],
+        );
+      }
+      function load(c) {
+        SEL = c;
+        draw();
+        let m = PAINEL_RESUMO[c] || {};
+        MQ.value = m.municipio ? m.municipio + " - " + m.uf : MQ.value;
+        closeSuggestions();
+        S.innerHTML = "Carregando...";
+        document.querySelector("#munjs")?.remove();
+        let z = document.createElement("script");
+        z.id = "munjs";
+        z.src = "data/municipios/" + c + ".js";
+        z.onerror = () => (S.textContent = "Detalhe não encontrado.");
+        document.body.appendChild(z);
+        if (matchMedia("(max-width:1180px)").matches) document.body.classList.add("detail-open");
+      }
+      function available() {
+        return N.filter(matches);
+      }
+      function closeSuggestions() {
+        SG.style.display = "none";
+        SG.innerHTML = "";
+        ACTIVE = -1;
+      }
+      function showSuggestions() {
+        let q = normal(MQ.value);
+        if (!q) {
+          closeSuggestions();
+          return;
+        }
+        let starts = [],
+          contains = [];
+        available().forEach((m) => {
+          let n = normal(m.municipio);
+          (n.startsWith(q) ? starts : contains).push(m);
+        });
+        let list = starts.concat(contains).slice(0, 10);
+        if (!list.length) {
+          SG.innerHTML =
+            '<div class="suggestion">Nenhum município encontrado</div>';
+          SG.style.display = "block";
+          return;
+        }
+        SG.innerHTML = list
+          .map(
+            (m, i) =>
+              `<button type="button" class="suggestion" data-code="${esc(m.cd_munic)}"><strong>${esc(m.municipio)} - ${esc(m.uf)}</strong><small>${esc(m.regiao)} · Porte ${esc(m.porte)} · ${esc((m.quadrante || "").split(" ")[0])}</small></button>`,
+          )
+          .join("");
+        SG.style.display = "block";
+        SG.querySelectorAll("button").forEach(
+          (b) => (b.onclick = () => load(b.dataset.code)),
+        );
+      }
+      MQ.addEventListener("input", showSuggestions);
+      MQ.addEventListener("focus", showSuggestions);
+      MQ.addEventListener("keydown", (e) => {
+        let bs = [...SG.querySelectorAll("button")];
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          ACTIVE = Math.min(ACTIVE + 1, bs.length - 1);
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          ACTIVE = Math.max(ACTIVE - 1, 0);
+        } else if (e.key === "Enter" && ACTIVE >= 0) {
+          e.preventDefault();
+          bs[ACTIVE]?.click();
+        } else if (e.key === "Escape") closeSuggestions();
+        bs.forEach((b, i) => b.classList.toggle("active", i === ACTIVE));
+      });
+      document.addEventListener("click", (e) => {
+        if (!e.target.closest(".searchbox")) closeSuggestions();
+      });
+      function nat(a, b) {
+        return String(a).localeCompare(String(b), "pt-BR", {
+          numeric: true,
+          sensitivity: "base",
+        });
+      }
+      function semAcento(v) {
+        return normal(v);
+      }
+      function num(v) {
+        if (v === null || v === undefined) return NaN;
+        let z = String(v).trim().replace(/\s/g, "");
+        if (z.includes(",") && z.includes("."))
+          z = z.replace(/\./g, "").replace(",", ".");
+        else if (z.includes(",")) z = z.replace(",", ".");
+        return Number(z);
+      }
+      function fmt(v, tipo) {
+        let n = num(v);
+        if (!Number.isFinite(n)) return "Sem dado";
+        if (tipo === "int") return Math.round(n).toLocaleString("pt-BR");
+        if (tipo === "pct")
+          return (
+            n.toLocaleString("pt-BR", {
+              minimumFractionDigits: 1,
+              maximumFractionDigits: 2,
+            }) + "%"
+          );
+        if (tipo === "brl")
+          return n.toLocaleString("pt-BR", {
+            style: "currency",
+            currency: "BRL",
+          });
+        return n.toLocaleString("pt-BR", { maximumFractionDigits: 2 });
+      }
+      function exata(vs, codigos) {
+        let cs = codigos.map(semAcento);
+        return vs.find(
+          (x) => cs.includes(semAcento(x.v)) || cs.includes(semAcento(x.k)),
+        );
+      }
+      function item(vs, codigos, tipo, meta) {
+        let v = exata(vs, codigos);
+        if (!v || !Number.isFinite(num(v.x)))
+          return { valor: "Sem dado", meta };
+        return {
+          valor: fmt(v.x, tipo),
+          meta: [v.f, v.a, v.v].filter(Boolean).join(" · ") || meta,
+        };
+      }
+      function receitaPC(vs, pop) {
+        let pronta = exata(vs, [
+          "receita_propria_pcap_2023",
+          "receita_propria_per_capita_2023",
+          "receita_propria_por_habitante_2023",
+        ]);
+        if (pronta && Number.isFinite(num(pronta.x)))
+          return {
+            valor: fmt(pronta.x, "brl"),
+            meta: [pronta.f, pronta.a, pronta.v].filter(Boolean).join(" · "),
+          };
+        let base = exata(vs, [
+            "receita_tributaria",
+            "x1_1_0_0_00_0_0_impostos_taxas_e_contribuicoes_de_melhoria",
+          ]),
+          n = num(base && base.x),
+          den = num(pop);
+        if (Number.isFinite(n) && Number.isFinite(den) && den > 0)
+          return {
+            valor: fmt(n / den, "brl"),
+            meta: "STN - SICONFI · 2023 · receita tributária ÷ população",
+          };
+        return { valor: "Sem dado", meta: "STN - SICONFI · 2023" };
+      }
+
+      function quadrantText(q){
+        const k=(q||"").slice(0,2);
+        return ({Q1:"O município combina capacidade estatal e entrega governamental acima dos cortes nacionais.",Q2:"O município apresenta capacidade estatal elevada, mas entrega governamental abaixo do corte nacional.",Q3:"O município apresenta entrega governamental elevada em relação à capacidade estatal medida pelo índice.",Q4:"O município apresenta capacidade estatal e entrega governamental abaixo dos cortes nacionais."})[k]||"Classificação indisponível para este município.";
+      }
+      function csvEscape(v){ return '"'+String(v??"").replace(/"/g,'""')+'"'; }
+      function exportCurrentCsv(){
+        if(!CURRENT_MUN_PAYLOAD)return;
+        const p=CURRENT_MUN_PAYLOAD, rows=[["codigo_ibge","municipio","uf","base","tema","codigo_variavel","rotulo","valor","fonte","ano","cobertura_nacional","regra_agregacao"]];
+        p.variaveis.forEach(v=>rows.push([p.municipio.cd_munic,p.municipio.municipio,p.municipio.uf,v.b,v.g,v.v,v.d,v.x,v.f,v.a,v.c,v.r]));
+        const csv='\ufeff'+rows.map(r=>r.map(csvEscape).join(';')).join('\r\n'), blob=new Blob([csv],{type:'text/csv;charset=utf-8'}), url=URL.createObjectURL(blob), a=document.createElement('a');
+        a.href=url;a.download=`${p.municipio.cd_munic}_${normal(p.municipio.municipio).replace(/[^a-z0-9]+/g,'_')}.csv`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      }
+      function familyIcon(name){ const n=normal(name); if(n.includes('financ'))return 'R$'; if(n.includes('censo')||n.includes('renda'))return '⌂'; if(n.includes('rais')||n.includes('trabalho'))return '▣'; if(n.includes('sane'))return '≈'; if(n.includes('seguranca alimentar'))return '◉'; if(n.includes('munic'))return '◆'; return '▦'; }
+      function databaseHtml(F){ return Object.keys(F).sort(nat).map(f=>{const total=Object.values(F[f]).flat().length, temas=Object.keys(F[f]).length;return `<details class="family"><summary><span class="family-icon" aria-hidden="true">${familyIcon(f)}</span><span class="family-copy"><span class="family-name">${esc(f)}</span><span class="family-caption">${temas} ${temas===1?'tema':'temas'} disponíveis</span></span><span class="badge">${total.toLocaleString('pt-BR')}</span></summary>${Object.keys(F[f]).sort(nat).map(g=>`<details class="theme"><summary><span>${esc(g)}</span><span class="badge">${F[f][g].length.toLocaleString('pt-BR')}</span></summary>${F[f][g].map(v=>`<article class="var" data-s="${esc(normal(v.d+' '+v.k+' '+v.g+' '+v.f+' '+v.v))}"><strong>${esc(v.d)}</strong><div class="value">${esc(v.x)}</div><details class="tech"><summary>Detalhes técnicos</summary><div>Código: ${esc(v.v)}<br>Fonte: ${esc(v.f)}<br>Ano: ${esc(v.a||'não informado')}<br>Cobertura nacional: ${esc(v.c||'não informada')}%<br>Regra de agregação: ${esc(v.r)}</div></details></article>`).join('')}</details>`).join('')}</details>`}).join(''); }
+      function openDataModal(p,F){ const modal=document.getElementById('dataModal'),body=document.getElementById('dataModalBody'),search=document.getElementById('dataSearch'),clear=document.getElementById('dataSearchClear'),families=Object.keys(F).length,themes=Object.values(F).reduce((n,x)=>n+Object.keys(x).length,0); document.getElementById('dataModalSubtitle').textContent=`${p.municipio.municipio} - ${p.municipio.uf}`;document.getElementById('dataSummary').innerHTML=`<span class="data-summary-chip">${families} bases</span><span class="data-summary-chip">${themes} temas</span><span class="data-summary-chip">${p.variaveis.length.toLocaleString('pt-BR')} registros</span>`; body.innerHTML=`${databaseHtml(F)}<div class="data-empty" id="dataEmpty"><strong>Nenhum resultado encontrado</strong><br>Revise o termo pesquisado.</div>`;search.value='';clear.classList.remove('visible');function filter(){const q=normal(search.value),vars=[...body.querySelectorAll('.var')];let visible=0;vars.forEach(v=>{const yes=!q||v.dataset.s.includes(q);v.classList.toggle('hidden',!yes);if(yes)visible++});body.querySelectorAll('.theme').forEach(d=>{const any=[...d.querySelectorAll('.var')].some(v=>!v.classList.contains('hidden'));d.classList.toggle('hidden',!any);if(q&&any)d.open=true});body.querySelectorAll('.family').forEach(d=>{const any=[...d.querySelectorAll('.var')].some(v=>!v.classList.contains('hidden'));d.classList.toggle('hidden',!any);if(q&&any)d.open=true});document.getElementById('dataEmpty').classList.toggle('visible',visible===0);clear.classList.toggle('visible',!!search.value)}search.oninput=filter;clear.onclick=()=>{search.value='';filter();search.focus()};modal.classList.add('open');document.body.style.overflow='hidden';setTimeout(()=>search.focus(),40); }
+      function closeDataModal(){document.getElementById('dataModal').classList.remove('open');document.body.style.overflow='';}
+      let CURRENT_MODEL_CODE = null;
+      let CURRENT_MODEL_PAYLOAD = null;
+      let CURRENT_MODEL_LOADING = false;
+
+      function renderModelPayload(index, payload) {
+        const items = (payload?.itens || [])
+          .filter((x) => x.indice === index)
+          .sort((a, b) =>
+            String(a.dimensao).localeCompare(String(b.dimensao), "pt-BR", { sensitivity: "base" }) ||
+            Number(a.ordem || 0) - Number(b.ordem || 0) ||
+            String(a.rotulo).localeCompare(String(b.rotulo), "pt-BR", { numeric: true, sensitivity: "base" }),
+          );
+        const dimensions = {};
+        items.forEach((item) => {
+          const dimension = item.dimensao || "Sem dimensão";
+          (dimensions[dimension] ??= []).push(item);
+        });
+        return Object.entries(dimensions)
+          .map(([dimension, dimensionItems]) => {
+            const groups = {};
+            dimensionItems.forEach((item) => {
+              const group = item.grupo || "Componentes";
+              (groups[group] ??= []).push(item);
+            });
+            return `<details class="theme" open><summary>${esc(dimension)}<span class="badge">${dimensionItems.length}</span></summary>${Object.entries(groups)
+              .map(([group, groupItems]) => `<div class="model-group"><div class="model-group-title">${esc(group)}</div>${groupItems
+                .map((item) => `<div class="model-variable"><div class="model-variable-head"><strong>${esc(item.rotulo)}</strong><span class="model-variable-value">${esc(item.valor_exibido || "Sem dado")}</span></div><small>${esc(item.fonte || "Fonte não informada")} · ${esc(item.ano || "ano não informado")}${item.unidade ? " · " + esc(item.unidade) : ""}</small>${item.observacao ? `<div class="model-variable-note">${esc(item.observacao)}</div>` : ""}<div class="model-variable-tech">Código: ${esc(item.item_id)} · Valor usado no modelo: ${item.valor_modelo === null || item.valor_modelo === undefined ? "Sem dado" : esc(item.valor_modelo)}</div></div>`)
+                .join("")}</div>`)
+              .join("")}</details>`;
+          })
+          .join("");
+      }
+
+      function updateModelDetails() {
+        ["ICE", "IEG"].forEach((index) => {
+          const box = document.querySelector(`#detail-${index}`);
+          if (!box) return;
+          const body = box.querySelector(".index-detail-body");
+          if (!body) return;
+          body.innerHTML = CURRENT_MODEL_PAYLOAD
+            ? renderModelPayload(index, CURRENT_MODEL_PAYLOAD)
+            : '<div class="model-loading">Carregando componentes do índice...</div>';
+        });
+      }
+
+      function loadModelLayer(code) {
+        CURRENT_MODEL_CODE = code;
+        CURRENT_MODEL_PAYLOAD = null;
+        CURRENT_MODEL_LOADING = true;
+        document.querySelector("#modelmunjs")?.remove();
+        updateModelDetails();
+        window.__entregaModeloMunicipio = (payload) => {
+          if (String(payload?.cd_munic) !== String(CURRENT_MODEL_CODE)) return;
+          CURRENT_MODEL_PAYLOAD = payload;
+          CURRENT_MODEL_LOADING = false;
+          updateModelDetails();
+        };
+        const script = document.createElement("script");
+        script.id = "modelmunjs";
+        script.src = "data/modelo_municipios/" + code + ".js";
+        script.onerror = () => {
+          CURRENT_MODEL_LOADING = false;
+          ["ICE", "IEG"].forEach((index) => {
+            const body = document.querySelector(`#detail-${index} .index-detail-body`);
+            if (body) body.innerHTML = '<div class="model-loading">Camada do modelo não encontrada para este município.</div>';
+          });
+        };
+        document.body.appendChild(script);
+      }
+
+      function toggleIndex(index) {
+        const box = document.querySelector(`#detail-${index}`);
+        if (!box) return;
+        box.hidden = !box.hidden;
+        document.querySelector(`[data-index="${index}"]`)?.setAttribute("aria-expanded", String(!box.hidden));
+        if (!box.hidden) {
+          if (!CURRENT_MODEL_PAYLOAD && !CURRENT_MODEL_LOADING && SEL) loadModelLayer(SEL);
+          else updateModelDetails();
+        }
+      }
+      window.__entregaMunicipio = (p) => {
+        let m = p.municipio,
+          F = {},
+          pop = m.populacao,
+          superior = item(
+            p.variaveis,
+            ["perc_SUP..COMP"],
+            "pct",
+            "RAIS · 2020",
+          ),
+          receita = receitaPC(p.variaveis, pop),
+          esgoto = item(
+            p.variaveis,
+            ["esgoto_2022"],
+            "pct",
+            "IBGE · Censo 2022",
+          ),
+          ideb = item(p.variaveis, ["ideb2023"], "num", "INEP · 2023");
+        p.variaveis
+          .sort((a, b) => nat(a.k, b.k))
+          .forEach((v) => ((F[v.b] ??= {})[v.g] ??= []).push(v));
+        S.innerHTML = `<button class="detail-close" id="detailClose" type="button" aria-label="Fechar detalhes">×</button><div class="municipio-head"><h2>${esc(m.municipio)} - ${esc(m.uf)}</h2><div class="municipio-pop"><strong>População: ${esc(fmt(pop,"int"))}</strong></div><div class="context-line"><span class="meta">Cod.: ${esc(m.cd_munic)} · ${esc(m.regiao)} · Porte ${esc(m.porte)}</span></div></div><div class="model-strip"><button type="button" class="model-card" data-index="ICE" aria-expanded="false"><span>Índice de Capacidade Estatal (ICE)</span><b>${esc(m.ICE)}</b><div class="percentile-viz"><div class="percentile-track"><i class="percentile-marker" style="left:${Math.max(0,Math.min(100,num(m.posicao_ICE)||0))}%"></i></div><div class="percentile-caption"><span>0</span><strong>P${esc(m.posicao_ICE)}</strong><span>100</span></div></div><div class="expand-hint">Ver 41 componentes</div></button><button type="button" class="model-card" data-index="IEG" aria-expanded="false"><span>Índice de Entrega Governamental (IEG)</span><b>${esc(m.IEG)}</b><div class="percentile-viz"><div class="percentile-track"><i class="percentile-marker" style="left:${Math.max(0,Math.min(100,num(m.posicao_IEG)||0))}%"></i></div><div class="percentile-caption"><span>0</span><strong>P${esc(m.posicao_IEG)}</strong><span>100</span></div></div><div class="expand-hint">Ver 7 componentes</div></button></div><section class="index-detail" id="detail-ICE" hidden><h3>Variáveis de origem do ICE</h3><p class="index-note">Valores observados no município. Não é uma decomposição matemática da pontuação final.</p><div class="index-detail-body"><div class="model-loading">Clique no cartão para carregar os 41 componentes do ICE.</div></div></section><section class="index-detail" id="detail-IEG" hidden><h3>Variáveis de origem do IEG</h3><p class="index-note">Valores observados no município. A pobreza entra no índice com sinal invertido.</p><div class="index-detail-body"><div class="model-loading">Clique no cartão para carregar os 7 componentes do IEG.</div></div></section><div class="quadrant-hero ${(m.quadrante||"").slice(0,2).toLowerCase()}"><strong>${esc(m.quadrante)}</strong><p>${esc(quadrantText(m.quadrante))}</p><button class="quadrant-link" id="quadrantMethod" type="button">Como esse quadrante é calculado →</button></div><div class="pib-context"><strong>PIB per capita:</strong> ${esc(fmt(m.pib_pc,"brl"))} · Quintil nacional ${esc(m.quintil_pib||"sem classificação")}</div><div class="cards"><div class="card"><b>${esc(superior.valor)}</b><span class="indicator-label">Servidores com ensino superior</span><span class="meta">${esc(superior.meta)}</span></div><div class="card"><b>${esc(receita.valor)}</b><span class="indicator-label">Receita própria / habitante</span><span class="meta">${esc(receita.meta)}</span></div><div class="card"><b>${esc(esgoto.valor)}</b><span class="indicator-label">População atendida por esgoto</span><span class="meta">${esc(esgoto.meta)}</span></div><div class="card"><b>${esc(ideb.valor)}</b><span class="indicator-label">IDEB · anos iniciais</span><span class="meta">${esc(ideb.meta)}</span></div></div><button class="open-data-button" id="openData" type="button">Ver base completa deste município →</button>`;
+        CURRENT_MODEL_CODE = String(m.cd_munic);
+        CURRENT_MODEL_PAYLOAD = null;
+        CURRENT_MODEL_LOADING = false;
+        document.querySelectorAll("[data-index]").forEach(b=>b.onclick=()=>toggleIndex(b.dataset.index));
+        document.querySelector("#detailClose")?.addEventListener("click",()=>document.body.classList.remove("detail-open"));
+        document.querySelector("#quadrantMethod")?.addEventListener("click",()=>document.getElementById("openMethod").click());
+        document.querySelector("#openData")?.addEventListener("click",()=>openDataModal(p,F));
+        CURRENT_MUN_PAYLOAD=p;
+      };
+    </script>
+    <script>
+      (function () {
+        const modal = document.getElementById("studyModal"),
+          ok = document.getElementById("acceptStudy"),
+          remember = document.getElementById("dontShowStudy"),
+          key = "painel-v13-aviso-aceito";
+        try {
+          if (localStorage.getItem(key) === "1") modal.hidden = true;
+        } catch (e) {}
+        function fechar() {
+          if (remember.checked) {
+            try {
+              localStorage.setItem(key, "1");
+            } catch (e) {}
+          }
+          modal.hidden = true;
+        }
+        ok.addEventListener("click", fechar);
+        if (!modal.hidden) ok.focus();
+      })();
+    </script>
+
+    <script>
+      (function(){
+        const modal=document.getElementById("methodModal"), open=document.getElementById("openMethod"), close=document.getElementById("closeMethod");
+        function abrir(){ modal.hidden=false; close.focus(); }
+        function fechar(){ modal.hidden=true; open.focus(); }
+        open.addEventListener("click",abrir); close.addEventListener("click",fechar);
+        modal.addEventListener("click",e=>{if(e.target===modal)fechar()});
+        document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!modal.hidden)fechar()});
+      })();
+    </script>
+
+    <script>
+      (function(){
+        const drawer=document.getElementById('filterDrawer'),backdrop=document.getElementById('filterBackdrop'),trigger=document.getElementById('filterTrigger'),close=document.getElementById('filterClose'),apply=document.getElementById('filterApply'),badge=document.getElementById('filterBadge');
+        function count(){const n=[UF,QD,PT,PIB].filter(x=>x.value).length;badge.textContent=n;badge.classList.toggle('visible',n>0);}
+        function open(){drawer.classList.add('open');backdrop.classList.add('open');document.body.style.overflow='hidden';}
+        function shut(){drawer.classList.remove('open');backdrop.classList.remove('open');document.body.style.overflow='';count();}
+        trigger.onclick=open;close.onclick=shut;apply.onclick=shut;backdrop.onclick=shut;[UF,QD,PT,PIB].forEach(x=>x.addEventListener('change',count));updateFilterBadge=count;count();
+        document.getElementById('closeData').onclick=closeDataModal;document.getElementById('exportCsv').onclick=exportCurrentCsv;document.getElementById('dataModal').addEventListener('click',e=>{if(e.target.id==='dataModal')closeDataModal()});
+        document.addEventListener('keydown',e=>{if(e.key==='Escape'){if(document.getElementById('dataModal').classList.contains('open'))closeDataModal();else if(drawer.classList.contains('open'))shut();}});
+      })();
+    </script>
+
+    <script>
+      (function(){
+        const legend=document.getElementById('legend'), button=document.getElementById('legendToggle');
+        if(!legend||!button)return;
+        let timer=null;
+        function setOpen(open){
+          legend.classList.toggle('open',open);
+          button.setAttribute('aria-expanded',String(open));
+          clearTimeout(timer);
+          if(open) timer=setTimeout(()=>setOpen(false),8000);
+        }
+        button.addEventListener('click',()=>setOpen(!legend.classList.contains('open')));
+        legend.addEventListener('mouseenter',()=>clearTimeout(timer));
+        legend.addEventListener('mouseleave',()=>{if(legend.classList.contains('open'))timer=setTimeout(()=>setOpen(false),2600)});
+        document.addEventListener('keydown',e=>{if(e.key==='Escape'&&legend.classList.contains('open'))setOpen(false)});
+      })();
+    </script>
+  </body>
+</html>
